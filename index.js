@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const port = process.env.PORT || 9000;
@@ -31,9 +31,17 @@ async function run() {
     const db = client.db("solosphere");
     const jobCollection = db.collection("jobs");
 
-    // get data from db 
+    // get data from db
     app.get("/jobs", async (req, res) => {
       const result = await jobCollection.find().toArray();
+      res.send(result);
+    });
+
+    // get a single data from DB bt id
+    app.get("/job/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await jobCollection.findOne(query);
       res.send(result);
     });
 
@@ -51,6 +59,28 @@ async function run() {
       const result = await jobCollection.insertOne(jobData);
       console.log(jobData);
       res.send(jobData);
+    });
+
+    // Updated data on DataBase
+    app.put("/update-job/:id", async (req, res) => {
+      const jobData = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updated = {
+        $set: jobData,
+      };
+      const option = { upsert: true };
+      const result = await jobCollection.updateOne(query, updated, option);
+      console.log(result);
+      res.send(result);
+    });
+
+    // Delete operation for my Job-Post
+    app.delete("/jobs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await jobCollection.deleteOne(query);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
